@@ -1,0 +1,204 @@
+///for mail sent
+
+npm install aws-sdk -- for instal aws
+
+///make this on env file
+export AWS_ACCESS_KEY_ID=your_access_key_id
+export AWS_SECRET_ACCESS_KEY=your_secret_access_key
+export AWS_REGION=your_region
+
+
+//write this code
+const AWS = require('aws-sdk');
+
+// Set AWS credentials if not using environment variables
+// AWS.config.update({
+//   accessKeyId: 'your_access_key_id',
+//   secretAccessKey: 'your_secret_access_key',
+//   region: 'your_region',
+// });
+
+async function sendEmail(data) {
+  const ses = new AWS.SES({ apiVersion: '2010-12-01' });
+
+  const params = {
+    Destination: {
+      ToAddresses: [data.to],
+    },
+    Message: {
+      Body: {
+        Text: {
+          Charset: 'UTF-8',
+          Data: data.text,
+        },
+      },
+      Subject: {
+        Charset: 'UTF-8',
+        Data: data.subject,
+      },
+    },
+    Source: data.from,
+  };
+
+  try {
+    const result = await ses.sendEmail(params).promise();
+    console.log('Email sent successfully:', result.MessageId);
+  } catch (error) {
+    console.error('Error sending email:', error);
+  }
+}
+
+// Example usage
+const emailData = {
+  to: 'recipient@example.com',
+  from: 'sender@example.com',
+  subject: 'Subject of the email',
+  text: 'Plain text content of the email',
+};
+
+sendEmail(emailData);
+
+-----------------------------------------------------------------------------------------------
+
+
+//Like and Unlike the blogs Only By user
+const likeBlog = asyncHandler(async (req, res) => {
+  const { blogId } = req.body;
+  validateMongoDbId(blogId);
+
+  //Find the blog which you want to be liked
+  const blog = await Blog.findById(blogId);
+  //find the login user
+  const loginUserId = req?.user?._id;
+  //find if the user has liked the blog
+  const isLiked = blog?.isLike;
+  //find if the user has disliked the blog
+  // const alreadyDisliked = (blog?.isDisLike || []).find(
+  //     (userId) => userId?.toString() === loginUserId?.toString()
+  //   );
+  const dislikesArray = Array.isArray(blog?.dislike) ? blog?.dislike : [];
+  const alreadyDisliked = dislikesArray.find(
+    (userId) => userId?.toString() === loginUserId?.toString()
+  );
+
+  if (alreadyDisliked) {
+    const blog = await Blog.findByIdAndUpdate(
+      blogId,
+      {
+        $pull: { dislike: loginUserId },
+        isDisLike: false,
+      },
+      {
+        new: true,
+      }
+    );
+    res.json(blog);
+  }
+  if (isLiked) {
+    const blog = await Blog.findByIdAndUpdate(
+      blogId,
+      {
+        $pull: { likes: loginUserId },
+        isLike: false,
+      },
+      {
+        new: true,
+      }
+    );
+    res.json(blog);
+  } else {
+    const blog = await Blog.findByIdAndUpdate(
+      blogId,
+      {
+        $push: { likes: loginUserId },
+        isLike: true,
+      },
+      {
+        new: true,
+      }
+    );
+    res.json(blog);
+  }
+});
+
+//Dislike the blogs by the user
+const disLikeBlog = asyncHandler(async (req, res) => {
+  const { blogId } = req.body;
+  validateMongoDbId(blogId);
+
+  //Find the blog which you want to be liked
+  const blog = await Blog.findById(blogId);
+  //find the login user
+  const loginUserId = req?.user?._id;
+  //find if the user has liked the blog
+  const isDisLiked = blog?.isDisLike;
+  //find if the user has disliked the blog
+  //   const alreadyLiked = (blog?.likes || []).find(
+  //     (userId) => userId?.toString() === loginUserId?.toString()
+  //   );
+  const likesArray = Array.isArray(blog?.isLike) ? blog?.isLike : [];
+  const alreadyLiked = likesArray.find(
+    (userId) => userId?.toString() === loginUserId?.toString()
+  );
+
+  if (alreadyLiked) {
+    const blog = await Blog.findByIdAndUpdate(
+      blogId,
+      {
+        $pull: { likes: loginUserId },
+        isLike: false,
+      },
+      {
+        new: true,
+      }
+    );
+    res.json(blog);
+  }
+  if (isDisLiked) {
+    const blog = await Blog.findByIdAndUpdate(
+      blogId,
+      {
+        $pull: { dislike: loginUserId },
+        isDisLike: false,
+      },
+      {
+        new: true,
+      }
+    );
+    res.json(blog);
+  } else {
+    const blog = await Blog.findByIdAndUpdate(
+      blogId,
+      {
+        $push: { dislike: loginUserId },
+        isDisLike: true,
+      },
+      {
+        new: true,
+      }
+    );
+    res.json(blog);
+  }
+});
+
+----------------------------------------------------------------------------
+//only for show the people who like the blog
+.populate({
+        path: "likes",
+        select: "_id", // Select only the "_id" field of the likes
+      })
+---------------------------------------------------------------------------
+Empty cart deleted code
+
+// const emptyCart = asyncHandler( async(req, res) => {
+//     const { _id } = req.user;
+//     validateMongoDbId(_id);
+//     try{
+//         const user = await User.findOne({_id});
+//         const cart = await Cart.findByIdAndDelete({ orderby: user._id});
+//         res.json(cart);
+//     } catch (error) {
+//         throw new Error(error);
+//     }
+// })
+----------------------------------------------------------------------------
